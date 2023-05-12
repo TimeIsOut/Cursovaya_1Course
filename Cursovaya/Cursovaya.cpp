@@ -123,7 +123,8 @@ void show_students() {
 
 int main()
 {
-    SetConsoleCP(1251);
-    SetConsoleOutputCP(1251);
+    SetConsoleCP(65001);
+    SetConsoleOutputCP(65001);
+    show_students();
     return 0;
 }
