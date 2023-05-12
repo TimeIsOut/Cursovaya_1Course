@@ -153,73 +153,75 @@ class Student {
         }
 };
 
-vector<string> temp = { "Full Name", "Date of Birth", "Sex", "Student Card", "Institute", "Department", "Course" };
-List STATE_ORDER = List(temp);
 
-
-void add_student() {
-    vector<string> temp = { "Введите ФИО студента: ", "День рождения в формате ДД.ММ.ГГГГ: ", "Пол(М - мужской, Ж - женский): ", "Шифр студента (формат: 01Б2345): ", "Институт студента: ", "Шифр кафедры студента: ", "Курс в формате (Б - бакалавриат, М - магистратура, А - аспирантура)(цифра курса): " };
-    List order = List(temp);
-    ofstream database;
-    char data[100];
-    database.open(".\\database.txt");
-    for (int i = 0; i < 7; i++) {
-        cout << order[i]->val;
-        cin.getline(data, 100);
-        database << data << ';';
-    }
-    database << '\n';
-    database.close();
-    cout << "Студент успешно добавлен!";
-}
-
-void delete_student() {
-    char studentCard[8];
-    cout << "Пожалуйста, введите шифр студента, подлежащий удалению (формат 01Б2345): ";
-    cin >> studentCard;
-    ifstream database;
-    database.open(".\\database.txt");
-    char str[100];
-    List dataHolder = List();
-    for (database.getline(str, 100, 10); !(database.eof()); database.getline(str, 100, 10)) {
-        if (!(strstr(str, studentCard))) dataHolder.push_back(str);
-    }
-    database.close();
-    ofstream newDatabase;
-    newDatabase.open(".\\database.txt");
-    for (int i = 0; i < dataHolder.length + 1; i++) {
-        newDatabase << dataHolder[i]->val << endl;
-    }
-    cout << "Студент успешно удалён!" << endl;
-}
-
-void show_students() {
-    ifstream database;
-    string s;
-    char str[100];
-    string word;
-    char* ptr = NULL;
-    char* next_ptr = NULL;
-    database.open(".\\database.txt");
-    int counter;
-    for (database.getline(str, 100, 10); !(database.eof()); database.getline(str, 100, 10)) {
-        stringstream ss(str);
-        counter = 0;
-        while (getline(ss, word, ';')) {
-            cout << STATE_ORDER[counter]->val << ": " << word << endl;
-            counter++;
+class DatabaseWorker {
+    protected:
+        string databasePath = ".\\database.txt";
+        ifstream databaseIn;
+        ofstream databaseOut;
+        List stateOrder = List({ "Full Name", "Date of Birth", "Sex", "Student Card", "Institute", "Department", "Course" });
+        List addingOrder = List({ "Введите ФИО студента: ", "День рождения в формате ДД.ММ.ГГГГ: ", "Пол(М - мужской, Ж - женский): ", "Шифр студента (формат: 01Б2345): ", "Институт студента: ", "Шифр кафедры студента: ", "Курс в формате (Б - бакалавриат, М - магистратура, А - аспирантура)(цифра курса): " });
+    public:
+        void add_student() {
+            char data[100];
+            databaseOut.open(databasePath);
+            for (int i = 0; i < 7; i++) {
+                cout << addingOrder[i]->val;
+                cin.getline(data, 100);
+                databaseOut << data << ';';
+            }
+            databaseOut << '\n';
+            databaseOut.close();
+            cout << "Студент успешно добавлен!";
         }
-        cout << "-----" << endl;
-    }
-    database.close();
-}
+
+        void delete_student() {
+            char studentCard[8];
+            cout << "Пожалуйста, введите шифр студента, подлежащий удалению (формат 01Б2345): ";
+            cin >> studentCard;
+            databaseIn.open(".\\database.txt");
+            char str[100];
+            List dataHolder = List();
+            for (databaseIn.getline(str, 100, 10); !(databaseIn.eof()); databaseIn.getline(str, 100, 10)) {
+                if (!(strstr(str, studentCard))) dataHolder.push_back(str);
+            }
+            databaseIn.close();
+            databaseOut.open(".\\database.txt");
+            for (int i = 0; i < dataHolder.length + 1; i++) {
+                databaseOut << dataHolder[i]->val << endl;
+            }
+            databaseOut.close();
+            cout << "Студент успешно удалён!" << endl;
+        }
+
+        void show_students() {
+            string s;
+            char str[100];
+            string word;
+            char* ptr = NULL;
+            char* next_ptr = NULL;
+            databaseIn.open(".\\database.txt");
+            int counter;
+            for (databaseIn.getline(str, 100, 10); !(databaseIn.eof()); databaseIn.getline(str, 100, 10)) {
+                stringstream ss(str);
+                counter = 0;
+                while (getline(ss, word, ';')) {
+                    cout << stateOrder[counter]->val << ": " << word << endl;
+                    counter++;
+                }
+                cout << "-----" << endl;
+            }
+            databaseIn.close();
+        }
+};
 
 int main()
 {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
-    show_students();
-    delete_student();
-    show_students();
+    DatabaseWorker* dbWorker = new DatabaseWorker();
+    dbWorker->show_students();
+    dbWorker->delete_student();
+    dbWorker->show_students();
     return 0;
 }
