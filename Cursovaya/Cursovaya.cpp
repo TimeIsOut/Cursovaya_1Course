@@ -16,10 +16,12 @@ struct Node {
 struct List {
     Node* first;
     Node* last;
+    int length = 0;
     List() : first(nullptr), last(nullptr){}
     List(vector<string> array) {
         for (string line : array) {
             push_back(line);
+            length++;
         }
     }
     ~List() {
@@ -39,6 +41,7 @@ struct List {
         }
         last->next = p;
         last = p;
+        length++;
     }
 
     void print() {
@@ -56,6 +59,7 @@ struct List {
         Node* p = first;
         first = p->next;
         delete p;
+        length--;
     }
 
     string pop() {
@@ -63,6 +67,7 @@ struct List {
         if (first == last) {
             string val = first->val;
             remove_first();
+            length--;
             return val;
         }
         string val = last->val;
@@ -71,6 +76,7 @@ struct List {
         p->next = nullptr;
         delete last;
         last = p;
+        length--;
         return val;
     }
 
@@ -83,7 +89,6 @@ struct List {
         }
         return p;
     }
-
 };
 
 struct Date {
@@ -153,17 +158,39 @@ List STATE_ORDER = List(temp);
 
 
 void add_student() {
-    string order[7] = { "Введите ФИО студента: ", "День рождения в формате ДД.ММ.ГГГГ: ", "Пол(М - мужской, Ж - женский): ", "Шифр студента (формат: 01Б2345): ", "Институт студента: ", "Шифр кафедры студента: ", "Курс в формате (Б - бакалавриат, М - магистратура, А - аспирантура)(цифра курса): " };
+    vector<string> temp = { "Введите ФИО студента: ", "День рождения в формате ДД.ММ.ГГГГ: ", "Пол(М - мужской, Ж - женский): ", "Шифр студента (формат: 01Б2345): ", "Институт студента: ", "Шифр кафедры студента: ", "Курс в формате (Б - бакалавриат, М - магистратура, А - аспирантура)(цифра курса): " };
+    List order = List(temp);
     ofstream database;
     char data[100];
     database.open(".\\database.txt");
     for (int i = 0; i < 7; i++) {
-        cout << order[i];
+        cout << order[i]->val;
         cin.getline(data, 100);
         database << data << ';';
     }
     database << '\n';
+    database.close();
     cout << "Студент успешно добавлен!";
+}
+
+void delete_student() {
+    char studentCard[8];
+    cout << "Пожалуйста, введите шифр студента, подлежащий удалению (формат 01Б2345): ";
+    cin >> studentCard;
+    ifstream database;
+    database.open(".\\database.txt");
+    char str[100];
+    List dataHolder = List();
+    for (database.getline(str, 100, 10); !(database.eof()); database.getline(str, 100, 10)) {
+        if (!(strstr(str, studentCard))) dataHolder.push_back(str);
+    }
+    database.close();
+    ofstream newDatabase;
+    newDatabase.open(".\\database.txt");
+    for (int i = 0; i < dataHolder.length + 1; i++) {
+        newDatabase << dataHolder[i]->val << endl;
+    }
+    cout << "Студент успешно удалён!" << endl;
 }
 
 void show_students() {
@@ -184,12 +211,15 @@ void show_students() {
         }
         cout << "-----" << endl;
     }
+    database.close();
 }
 
 int main()
 {
-    SetConsoleCP(65001);
-    SetConsoleOutputCP(65001);
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
+    show_students();
+    delete_student();
     show_students();
     return 0;
 }
