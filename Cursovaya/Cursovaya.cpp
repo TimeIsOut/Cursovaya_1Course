@@ -3,10 +3,9 @@
 #include <sstream>
 #include <windows.h>
 #include <string>
+#include <vector>
 #include <stdio.h>
 using namespace std;
-
-string STATE_ORDER[7] = { "Full Name", "Date of Birth", "Sex", "Student Card", "Institute", "Department", "Level"};
 
 struct Node {
     string val;
@@ -18,10 +17,73 @@ struct List {
     Node* first;
     Node* last;
     List() : first(nullptr), last(nullptr){}
+    List(vector<string> array) {
+        for (string line : array) {
+            push_back(line);
+        }
+    }
+    ~List() {
+        while (first != nullptr) pop();
+    }
 
     bool is_empty() {
         return first == nullptr;
     }
+
+    void push_back(string _val) {
+        Node* p = new Node(_val);
+        if (is_empty()) {
+            first = p;
+            last = p;
+            return;
+        }
+        last->next = p;
+        last = p;
+    }
+
+    void print() {
+        if (is_empty()) return;
+        Node* p = first;
+        while (p) {
+            cout << p->val << ' ';
+            p = p->next;
+        }
+        cout << endl;
+    }
+
+    void remove_first() {
+        if (is_empty()) return;
+        Node* p = first;
+        first = p->next;
+        delete p;
+    }
+
+    string pop() {
+        if (is_empty()) return "";
+        if (first == last) {
+            string val = first->val;
+            remove_first();
+            return val;
+        }
+        string val = last->val;
+        Node* p = first;
+        while (p->next != last) p = p->next;
+        p->next = nullptr;
+        delete last;
+        last = p;
+        return val;
+    }
+
+    Node* operator[] (const int index) {
+        if (is_empty()) return nullptr;
+        Node* p = first;
+        for (int i = 0; i < index; i++) {
+            p = p->next;
+            if (!p) return nullptr;
+        }
+        return p;
+    }
+
 };
 
 struct Date {
@@ -86,6 +148,9 @@ class Student {
         }
 };
 
+vector<string> temp = { "Full Name", "Date of Birth", "Sex", "Student Card", "Institute", "Department", "Course" };
+List STATE_ORDER = List(temp);
+
 
 void add_student() {
     string order[7] = { "Введите ФИО студента: ", "День рождения в формате ДД.ММ.ГГГГ: ", "Пол(М - мужской, Ж - женский): ", "Шифр студента (формат: 01Б2345): ", "Институт студента: ", "Шифр кафедры студента: ", "Курс в формате (Б - бакалавриат, М - магистратура, А - аспирантура)(цифра курса): " };
@@ -114,7 +179,7 @@ void show_students() {
         stringstream ss(str);
         counter = 0;
         while (getline(ss, word, ';')) {
-            cout << STATE_ORDER[counter] << ": " << word << endl;
+            cout << STATE_ORDER[counter]->val << ": " << word << endl;
             counter++;
         }
         cout << "-----" << endl;
