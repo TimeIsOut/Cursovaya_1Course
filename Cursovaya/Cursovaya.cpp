@@ -111,7 +111,7 @@ struct Date {
             counter++;
         }
     }
-    string returnStringData() {
+    string return_string_data() {
         string sDay, sMonth, sYear = to_string(year);
         if (to_string(day).length() == 1) {
             sDay = '0' + to_string(day);
@@ -128,31 +128,6 @@ struct Date {
         return sDay + '.' + sMonth + '.' + sYear;
     }
 };
-
-class Student {
-    protected:
-        string fullName;
-        Date dateOfBirth;
-        char sex;
-        char cardNumber[8];
-        string institute;
-        string department;
-        char level[3];
-        Student(string _fullName = "UNDEFINED", string dob = "01.01.1901", char _sex = '?', char _cardNumber = *"???????", string _institute = "UNDEFINED", string _department = "UNDEFINED", char _level = *"??") {
-            fullName = _fullName;
-            dateOfBirth = Date(dob);
-            sex = _sex;
-            *cardNumber = _cardNumber;
-            institute = _institute;
-            department = _department;
-            *level = _level;
-        }
-    public:
-        string showDatabaseData() {
-            return fullName + ";" + dateOfBirth.returnStringData() + ";" + sex + ";" + cardNumber + ";" + institute + ";" + department + ";" + level;
-        }
-};
-
 
 class DatabaseWorker {
     protected:
