@@ -22,7 +22,6 @@ class List {
         List(vector<string> array) {
             for (string line : array) {
                 push_back(line);
-                length++;
             }
         }
 
@@ -170,11 +169,11 @@ class DatabaseWorker {
         List addingOrder = List({ "Введите ФИО студента: ", "День рождения в формате ДД.ММ.ГГГГ: ", "Пол(М - мужской, Ж - женский): ", "Шифр студента (формат: 01Б2345): ", "Институт студента: ", "Шифр кафедры студента: ", "Курс в формате (Б - бакалавриат, М - магистратура, А - аспирантура)(цифра курса): " });
     public:
         void add_student() {
-            char data[100];
-            databaseOut.open(databasePath);
+            string data;
+            databaseOut.open(databasePath, ios_base::app);
             for (int i = 0; i < 7; i++) {
                 cout << addingOrder[i]->val;
-                cin.getline(data, 100);
+                getline(cin >> ws, data);
                 databaseOut << data << ';';
             }
             databaseOut << endl;
@@ -278,9 +277,25 @@ int main()
 {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
+    int choiceNumber;
     DatabaseWorker* dbWorker = new DatabaseWorker();
-    dbWorker->show_students();
-    dbWorker->change_student();
-    dbWorker->show_students();
+    List options = List({ "Добавить нового студента", "Изменить существующего студента", "Удалить студента", "Показать список студентов"});
+    cout << "Добро пожаловать в меню обработки базы данных университета!" << endl;
+    do {
+        cout << endl << "Пожалуйста, выберите пункт меню, с которым вы хотите работать." << endl;
+        for (int counter = 0; counter <= options.length; counter++) {
+            cout << counter + 1 << ": " << options[counter]->val << ";" << endl;
+        }
+        cout << "0: Выход" << endl;
+        cout << "Ваша цифра: ";
+        cin >> choiceNumber;
+        switch (choiceNumber) {
+            case 1: dbWorker->add_student(); break;
+            case 2: dbWorker->change_student(); break;
+            case 3: dbWorker->delete_student(); break;
+            case 4: dbWorker->show_students(); break;
+            case 0: cout << "До скорых встреч!"; break;
+        }
+    } while (choiceNumber != 0);
     return 0;
 }
