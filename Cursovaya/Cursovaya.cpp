@@ -140,7 +140,7 @@ class Student {
         Student(string databaseLine) {
             stringstream ss(databaseLine);
             string buf;
-            int counter = 0;
+            int counter = -1;
             while (getline(ss, buf, ';')) {
                 switch (counter) {
                     case 0: fullName = buf; break;
@@ -165,18 +165,38 @@ class DatabaseWorker {
         string databasePath = ".\\database.txt";
         ifstream databaseIn;
         ofstream databaseOut;
-        List stateOrder = List({ "Full Name", "Date of Birth", "Sex", "Student Card", "Institute", "Department", "Course" });
+        List stateOrder = List({ "Full Name", "Date of Birth", "Sex", "Student Card", "Institute", "Department", "Course"});
         List addingOrder = List({ "Введите ФИО студента: ", "День рождения в формате ДД.ММ.ГГГГ: ", "Пол(М - мужской, Ж - женский): ", "Шифр студента (формат: 01Б2345): ", "Институт студента: ", "Шифр кафедры студента: ", "Курс в формате (Б - бакалавриат, М - магистратура, А - аспирантура)(цифра курса): " });
     public:
         void add_student() {
             string data;
             databaseOut.open(databasePath, ios_base::app);
+            databaseOut << "0;";
             for (int i = 0; i < 7; i++) {
                 cout << addingOrder[i]->val;
                 getline(cin >> ws, data);
                 databaseOut << data << ';';
             }
             databaseOut << endl;
+            int courseCount;
+            cout << "Сколько семестров прошёл студент? ";
+            cin >> courseCount;
+            for (int counter = 1; counter <= courseCount; counter++) {
+                cout << counter << " семестр -----" << endl;
+                databaseOut << counter << ';';
+                string courseName;
+                int courseMark;
+                do {
+                    cout << "Введите название предмета или 0, если все предметы были указаны и Вы хотите перейти к следующему семестру: ";
+                    getline(cin >> ws, courseName);
+                    if (courseName != "0") {
+                        cout << "Введите оценку: ";
+                        cin >> courseMark;
+                        databaseOut << courseName << ";" << courseMark << ";";
+                    }
+                } while (courseName != "0");
+                databaseOut << endl;
+            }
             databaseOut.close();
             cout << "Студент успешно добавлен!";
         }
@@ -188,8 +208,8 @@ class DatabaseWorker {
             cin >> studentCard;
             databaseIn.open(".\\database.txt");
             List dataHolder = List();
-            char str[100];
-            for (databaseIn.getline(str, 100, 10); !(databaseIn.eof()); databaseIn.getline(str, 100, 10)) {
+            char str[1000];
+            for (databaseIn.getline(str, 1000, 10); !(databaseIn.eof()); databaseIn.getline(str, 1000, 10)) {
                 if (!(strstr(str, studentCard))) { 
                     dataHolder.push_back(str);
                 }
@@ -201,15 +221,66 @@ class DatabaseWorker {
                     for (Node* node = stateOrder.first; node != nullptr; node = node->next, counter++) {
                         cout << counter << ": " << node->val << endl;
                     }
+                    cout << "8: Добавить новый семестр(ы)" << endl;
+                    cout << "9: Поменять оценку в пройденном семестре" << endl;
                     int number;
                     cout << "Ваша цифра: ";
                     cin >> number;
                     string newData;
-                    cout << addingOrder[number - 1]->val;
-                    getline(cin >> ws, newData);
-                    changedStudent.all_params[number - 1]->val = newData;
-                    dataHolder.push_back(changedStudent.return_string_data());
-                    flag = false;
+                    if (number != 8 && number != 9) {
+                        cout << addingOrder[number - 1]->val;
+                        getline(cin >> ws, newData);
+                        changedStudent.all_params[number - 1]->val = newData;
+                        dataHolder.push_back(changedStudent.return_string_data());
+                        flag = false;
+                    }
+                    else if (number == 9) {
+                        int semesterNumber;
+                        cout << "В каком семестре вы хотели бы изменить/добавить оценку? ";
+                        cin >> semesterNumber;
+                        do {
+                            string line(str);
+                            dataHolder.push_back(line);
+                            databaseIn.getline(str, 1000, 10);
+
+                        } while (str[0] - '0' != semesterNumber && str[0] != '0' && !(databaseIn.eof()));
+                        if (str[0] - '0' != semesterNumber) {
+                            cout << "Такого семестра у студента не было." << endl;
+                            return;
+                        }
+                        else {
+                            string semesterName;
+                            cout << "Какой предмет вы хотели бы изменить/добавить? ";
+                            cin >> semesterName;
+                            string strCopy(str);
+                            int index = strCopy.find(semesterName);
+                            int newMark;
+                            if (index != -1) {
+                                cout << "Новая оценка: ";
+                                cin >> newMark;
+                                strCopy[index + semesterName.length() + 1] = to_string(newMark)[0];
+                                dataHolder.push_back(strCopy);
+                            }
+                            else {
+                                cout << "Новая оценка: ";
+                                cin >> newMark;
+                                dataHolder.push_back(strCopy + ";" + semesterName + ";" + to_string(newMark));
+                            }
+                        }
+                    }
+                    else if (number == 8) {
+                        string courseName;
+                        int courseMark;
+                        do {
+                            cout << "Введите название предмета или 0, если все предметы были указаны и Вы хотите перейти к следующему семестру: ";
+                            getline(cin >> ws, courseName);
+                            if (courseName != "0") {
+                                cout << "Введите оценку: ";
+                                cin >> courseMark;
+                                databaseOut << courseName << ";" << courseMark << ";";
+                            }
+                        } while (courseName != "0");
+                    }
                 }
             }
             databaseIn.close();
@@ -231,12 +302,17 @@ class DatabaseWorker {
             cout << "Пожалуйста, введите шифр студента, подлежащий удалению (формат 01Б2345): ";
             cin >> studentCard;
             databaseIn.open(".\\database.txt");
-            char str[100];
+            char str[1000];
             bool flag = true;
             List dataHolder = List();
-            for (databaseIn.getline(str, 100, 10); !(databaseIn.eof()); databaseIn.getline(str, 100, 10)) {
+            for (databaseIn.getline(str, 1000, 10); !(databaseIn.eof()); databaseIn.getline(str, 1000, 10)) {
                 if (!(strstr(str, studentCard))) dataHolder.push_back(str);
-                else flag = false;
+                else {
+                    flag = false;
+                    do {
+                        databaseIn.getline(str, 1000, 10);
+                    } while (str[0] != '0' && !(databaseIn.eof()));
+                }
             }
             databaseIn.close();
             databaseOut.open(".\\database.txt");
@@ -254,20 +330,35 @@ class DatabaseWorker {
 
         void show_students() {
             string s;
-            char str[100];
+            char str[1000];
             string word;
             char* ptr = NULL;
             char* next_ptr = NULL;
             databaseIn.open(".\\database.txt");
             int counter;
-            for (databaseIn.getline(str, 100, 10); !(databaseIn.eof()); databaseIn.getline(str, 100, 10)) {
+            for (databaseIn.getline(str, 1000, 10); !(databaseIn.eof()); databaseIn.getline(str, 1000, 10)) {
                 stringstream ss(str);
-                counter = 0;
-                while (getline(ss, word, ';')) {
-                    cout << stateOrder[counter]->val << ": " << word << endl;
-                    counter++;
+                string buf;
+                char firstSymbol = str[0];
+                if (firstSymbol != '0') {
+                    getline(ss, buf, ';');
+                    cout << buf << " семестр -----" << endl;
+                    while (getline(ss, buf, ';')) {
+                        string name = buf;
+                        getline(ss, buf, ';');
+                        cout << name << ": " << buf << endl;
+                    }
+                    cout << "-----" << endl << endl;
                 }
-                cout << "-----" << endl;
+                else {
+                    counter = 0;
+                    getline(ss, word, ';');
+                    while (getline(ss, word, ';')) {
+                        cout << stateOrder[counter]->val << ": " << word << endl;
+                        counter++;
+                    }
+                    cout << "-----" << endl;
+                }
             }
             databaseIn.close();
         }
@@ -275,6 +366,7 @@ class DatabaseWorker {
 
 int main()
 {
+    setlocale(LC_ALL, "Russian");
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
     int choiceNumber;
