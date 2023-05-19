@@ -246,12 +246,13 @@ class DatabaseWorker {
                         } while (str[0] - '0' != semesterNumber && str[0] != '0' && !(databaseIn.eof()));
                         if (str[0] - '0' != semesterNumber) {
                             cout << "Такого семестра у студента не было." << endl;
-                            return;
+                            flag = false;
+                            continue;
                         }
                         else {
                             string semesterName;
                             cout << "Какой предмет вы хотели бы изменить/добавить? ";
-                            cin >> semesterName;
+                            getline(cin >> ws, semesterName);
                             string strCopy(str);
                             int index = strCopy.find(semesterName);
                             int newMark;
@@ -260,26 +261,40 @@ class DatabaseWorker {
                                 cin >> newMark;
                                 strCopy[index + semesterName.length() + 1] = to_string(newMark)[0];
                                 dataHolder.push_back(strCopy);
+                                flag = false;
                             }
                             else {
                                 cout << "Новая оценка: ";
                                 cin >> newMark;
-                                dataHolder.push_back(strCopy + ";" + semesterName + ";" + to_string(newMark));
+                                dataHolder.push_back(strCopy + semesterName + ";" + to_string(newMark));
+                                flag = false;
                             }
                         }
                     }
                     else if (number == 8) {
-                        string courseName;
-                        int courseMark;
+                        int counter = 0;
                         do {
-                            cout << "Введите название предмета или 0, если все предметы были указаны и Вы хотите перейти к следующему семестру: ";
-                            getline(cin >> ws, courseName);
-                            if (courseName != "0") {
-                                cout << "Введите оценку: ";
-                                cin >> courseMark;
-                                databaseOut << courseName << ";" << courseMark << ";";
-                            }
-                        } while (courseName != "0");
+                            string line(str);
+                            dataHolder.push_back(line);
+                            databaseIn.getline(str, 1000, 10);
+                            counter++;
+
+                        } while (str[0] != '0' && !(databaseIn.eof()));
+                        string newLine = to_string(counter) + ';';
+                        cout << counter << " семестр -----" << endl;
+                        string adding;
+                        while (true) {
+                            cout << "Введите название предмета, который хотели бы добавить в семестр или 0, чтобы закончить заполнение: ";
+                            getline(cin >> ws, adding);
+                            if (adding == "0") break;
+                            newLine = newLine + adding + ';';
+                            cout << "Оценка: ";
+                            getline(cin >> ws, adding);
+                            newLine = newLine + adding + ';';
+                        }
+                        dataHolder.push_back(newLine);
+                        flag = false;
+                        continue;
                     }
                 }
             }
