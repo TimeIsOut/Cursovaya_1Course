@@ -499,6 +499,68 @@ class DatabaseWorker {
             }
             databaseIn.close();
         }
+
+        void my_task() {
+            List filteredStudents = filter_students_by_date(true);
+            List dataHolder = List();
+            List semestersDataHolder = List();
+            bool flag = true;
+            string studentLine = "";
+            for (int counter = 0; counter <= filteredStudents.length; counter++) {
+                string str = filteredStudents[counter]->val;
+                if (str[0] != '0' && flag) {
+                    string pureData = str.substr(2);
+                    if (pureData.find("3") == -1) {
+                        semestersDataHolder.push_back(str);
+                    }
+                    else {
+                        flag = false;
+                        semestersDataHolder = List();
+                    }
+                }
+                else if (str[0] == '0') {
+                    if (studentLine != "") {
+                        dataHolder.push_back(studentLine);
+                        for (int i = 0; i <= semestersDataHolder.length; i++) {
+                            dataHolder.push_back(semestersDataHolder[i]->val);
+                        }
+                        semestersDataHolder = List();
+                        studentLine = "";
+                    }
+                    else {
+                        studentLine = str;
+                    }
+                }
+            }
+            for (int counter = 0; counter <= dataHolder.length; counter++) {
+                string str = dataHolder[counter]->val;
+                stringstream ss(str);
+                string word;
+                string buf;
+                char firstSymbol = str[0];
+                cout << endl;
+                if (firstSymbol != '0') {
+                    getline(ss, buf, ';');
+                    cout << buf << " семестр -----" << endl;
+                    while (getline(ss, buf, ';')) {
+                        string name = buf;
+                        getline(ss, buf, ';');
+                        cout << name << ": " << buf << endl;
+                    }
+                    cout << "-----" << endl << endl;
+                }
+                else {
+                    int i = 0;
+                    getline(ss, word, ';');
+                    while (getline(ss, word, ';')) {
+                        cout << stateOrder[i]->val << ": " << word << endl;
+                        i++;
+                    }
+                    cout << "-----" << endl;
+                }
+            }
+
+        }
 };
 
 int main()
@@ -508,7 +570,7 @@ int main()
     SetConsoleOutputCP(1251);
     int choiceNumber;
     DatabaseWorker* dbWorker = new DatabaseWorker();
-    List options = List({ "Добавить нового студента", "Изменить существующего студента", "Удалить студента", "Показать список студентов", "Вывести студентов определённого года рождения"});
+    List options = List({ "Добавить нового студента", "Изменить существующего студента", "Удалить студента", "Показать список студентов", "Вывести студентов определённого года рождения", "Показать выполнение задания" });
     cout << "Добро пожаловать в меню обработки базы данных университета!" << endl;
     do {
         cout << endl << "Пожалуйста, выберите пункт меню, с которым вы хотите работать." << endl;
@@ -524,9 +586,9 @@ int main()
             case 3: dbWorker->delete_student(); break;
             case 4: dbWorker->show_students(); break;
             case 5: dbWorker->filter_students_by_date(); break;
+            case 6: dbWorker->my_task(); break;
             case 0: cout << "До скорых встреч!"; break;
         }
     } while (choiceNumber != 0);
-
     return 0;
 }
