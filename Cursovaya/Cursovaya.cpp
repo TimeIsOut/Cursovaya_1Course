@@ -124,6 +124,66 @@ struct Date {
         }
         return sDay + '.' + sMonth + '.' + sYear;
     }
+
+    bool operator== (Date rhs) {
+        return rhs.day == this->day && rhs.month == this->month && rhs.year == this->year;
+    }
+
+    bool operator!= (Date rhs) {
+        return rhs.day != this->day || rhs.month != this->month || rhs.year != this->year;
+    }
+
+    bool operator< (Date rhs) {
+        if (rhs.year != this->year) {
+            return this->year < rhs.year;
+        }
+        if (rhs.month != this->month) {
+            return this->month < rhs.month;
+        }
+        if (rhs.day != this->day) {
+            return this->day < rhs.day;
+        }
+        return false;
+    }
+
+    bool operator> (Date rhs) {
+        if (rhs.year != this->year) {
+            return this->year > rhs.year;
+        }
+        if (rhs.month != this->month) {
+            return this->month > rhs.month;
+        }
+        if (rhs.day != this->day) {
+            return this->day > rhs.day;
+        }
+        return false;
+    }
+
+    bool operator<= (Date rhs) {
+        if (rhs.year != this->year) {
+            return this->year < rhs.year;
+        }
+        if (rhs.month != this->month) {
+            return this->month < rhs.month;
+        }
+        if (rhs.day != this->day) {
+            return this->day < rhs.day;
+        }
+        return true;
+    }
+
+    bool operator>= (Date rhs) {
+        if (rhs.year != this->year) {
+            return this->year > rhs.year;
+        }
+        if (rhs.month != this->month) {
+            return this->month > rhs.month;
+        }
+        if (rhs.day != this->day) {
+            return this->day > rhs.day;
+        }
+        return true;
+    }
 };
 
 class Student {
@@ -206,7 +266,7 @@ class DatabaseWorker {
             char studentCard[8];
             cout << "Пожалуйста, введите шифр студента, подлежащий изменению (формат 01А2345): ";
             cin >> studentCard;
-            databaseIn.open(".\\database.txt");
+            databaseIn.open(databasePath);
             List dataHolder = List();
             char str[1000];
             for (databaseIn.getline(str, 1000, 10); !(databaseIn.eof()); databaseIn.getline(str, 1000, 10)) {
@@ -299,7 +359,7 @@ class DatabaseWorker {
                 }
             }
             databaseIn.close();
-            databaseOut.open(".\\database.txt");
+            databaseOut.open(databasePath);
             for (int i = 0; i < dataHolder.length + 1; i++) {
                 databaseOut << dataHolder[i]->val << endl;
             }
@@ -316,7 +376,7 @@ class DatabaseWorker {
             char studentCard[8];
             cout << "Пожалуйста, введите шифр студента, подлежащий удалению (формат 01Б2345): ";
             cin >> studentCard;
-            databaseIn.open(".\\database.txt");
+            databaseIn.open(databasePath);
             char str[1000];
             bool flag = true;
             List dataHolder = List();
@@ -349,7 +409,7 @@ class DatabaseWorker {
             string word;
             char* ptr = NULL;
             char* next_ptr = NULL;
-            databaseIn.open(".\\database.txt");
+            databaseIn.open(databasePath);
             int counter;
             for (databaseIn.getline(str, 1000, 10); !(databaseIn.eof()); databaseIn.getline(str, 1000, 10)) {
                 stringstream ss(str);
@@ -377,6 +437,68 @@ class DatabaseWorker {
             }
             databaseIn.close();
         }
+
+        List filter_students_by_date(bool getData = false) {
+            char str[1000];
+            databaseIn.open(databasePath);
+            string start, end;
+            cout << "С какой даты вы бы хотели вывести студентов? (формат ДД.ММ.ГГГГ): ";
+            getline(cin >> ws, start);
+            cout << "На какой дате вы бы хотели закончить вывод студентов? (формат ДД.ММ.ГГГГ): ";
+            getline(cin >> ws, end);
+            Date startDate(start), endDate(end);
+            List dataHolder = List();
+            bool flag = true;
+            for (databaseIn.getline(str, 1000, 10); !(databaseIn.eof()); databaseIn.getline(str, 1000, 10)) {
+                string dbLine(str);
+                if (str[0] == '0') {
+                    Student gotStudent(dbLine);
+                    if (startDate <= gotStudent.dateOfBirth && gotStudent.dateOfBirth <= endDate) {
+                        flag = true;
+                        dataHolder.push_back(dbLine);
+                    }
+                    else {
+                        flag = false;
+                    }
+                }
+                else if (flag) {
+                    dataHolder.push_back(dbLine);
+                }
+            }
+            if (getData) {
+                return dataHolder;
+            }
+            else {
+                string word;
+                cout << endl;
+                for (int i = 0; i <= dataHolder.length; i++) {
+                    string str = dataHolder[i]->val;
+                    stringstream ss(str);
+                    string buf;
+                    char firstSymbol = str[0];
+                    if (firstSymbol != '0') {
+                        getline(ss, buf, ';');
+                        cout << buf << " семестр -----" << endl;
+                        while (getline(ss, buf, ';')) {
+                            string name = buf;
+                            getline(ss, buf, ';');
+                            cout << name << ": " << buf << endl;
+                        }
+                        cout << "-----" << endl << endl;
+                    }
+                    else {
+                        int counter = 0;
+                        getline(ss, word, ';');
+                        while (getline(ss, word, ';')) {
+                            cout << stateOrder[counter]->val << ": " << word << endl;
+                            counter++;
+                        }
+                        cout << "-----" << endl;
+                    }
+                }
+            }
+            databaseIn.close();
+        }
 };
 
 int main()
@@ -386,7 +508,7 @@ int main()
     SetConsoleOutputCP(1251);
     int choiceNumber;
     DatabaseWorker* dbWorker = new DatabaseWorker();
-    List options = List({ "Добавить нового студента", "Изменить существующего студента", "Удалить студента", "Показать список студентов"});
+    List options = List({ "Добавить нового студента", "Изменить существующего студента", "Удалить студента", "Показать список студентов", "Вывести студентов определённого года рождения"});
     cout << "Добро пожаловать в меню обработки базы данных университета!" << endl;
     do {
         cout << endl << "Пожалуйста, выберите пункт меню, с которым вы хотите работать." << endl;
@@ -401,8 +523,10 @@ int main()
             case 2: dbWorker->change_student(); break;
             case 3: dbWorker->delete_student(); break;
             case 4: dbWorker->show_students(); break;
+            case 5: dbWorker->filter_students_by_date(); break;
             case 0: cout << "До скорых встреч!"; break;
         }
     } while (choiceNumber != 0);
+
     return 0;
 }
