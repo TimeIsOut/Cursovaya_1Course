@@ -7,6 +7,63 @@
 #include <stdio.h>
 using namespace std;
 
+void Crypt()
+{
+    srand(time(NULL));
+    char* pass = new char[64];
+    for (int i = 0; i < 64; ++i) {
+        switch (rand() % 3) {
+        case 0:
+            pass[i] = rand() % 10 + '0';
+            break;
+        case 1:
+            pass[i] = rand() % 26 + 'A';
+            break;
+        case 2:
+            pass[i] = rand() % 26 + 'a';
+        }
+    }
+    string command = "openssl\\bin\\openssl.exe enc -aes-256-cbc -salt -in database.txt -out database.txt.enc -pass pass:";
+    command += pass;
+    system(command.c_str());
+    if (remove("database.txt") != 0) {
+        cout << "[ERROR] - deleting file" << endl;
+    }
+    ofstream file;
+    file.open("key.txt", ios::binary);
+    file.write(pass, 65);
+    file.close();
+    command = "openssl\\bin\\openssl.exe rsautl -encrypt -inkey rsa.public -pubin -in key.txt -out key.txt.enc";
+        system(command.c_str());
+    if (remove("key.txt") != 0) {
+        cout << "[ERROR] - deleting file" << endl;
+    }
+}
+
+
+void Decrypt()
+{
+    string command = "openssl\\bin\\openssl.exe rsautl -decrypt -inkey rsa.private -in key.txt.enc -out key.txt";
+    system(command.c_str());
+    if (remove("key.txt.enc") != 0) {
+        cout << "[ERROR] - deleting file" << endl;
+    }
+    char* pass = new char[64];
+    ifstream file;
+    file.open("key.txt", ios::binary);
+    file.read(pass, 65);
+    file.close();
+    if (remove("key.txt") != 0) {
+        cout << "[ERROR] - deleting file" << endl;
+    }
+    command = "openssl\\bin\\openssl.exe enc -aes-256-cbc -d -in database.txt.enc -out database.txt -pass pass:";
+    command += pass;
+    system(command.c_str());
+    if (remove("database.txt.enc") != 0) {
+        cout << "[ERROR] - deleting file" << endl;
+    }
+}
+
 struct Node {
     string val;
     Node* next;
@@ -230,6 +287,7 @@ class DatabaseWorker {
     public:
         void add_student() {
             string data;
+            Decrypt();
             databaseOut.open(databasePath, ios_base::app);
             databaseOut << "0;";
             for (int i = 0; i < 7; i++) {
@@ -258,6 +316,7 @@ class DatabaseWorker {
                 databaseOut << endl;
             }
             databaseOut.close();
+            Crypt();
             cout << "Студент успешно добавлен!";
         }
 
@@ -266,6 +325,7 @@ class DatabaseWorker {
             char studentCard[8];
             cout << "Пожалуйста, введите шифр студента, подлежащий изменению (формат 01А2345): ";
             cin >> studentCard;
+            Decrypt();
             databaseIn.open(databasePath);
             List dataHolder = List();
             char str[1000];
@@ -316,7 +376,7 @@ class DatabaseWorker {
                             string strCopy(str);
                             int index = strCopy.find(semesterName);
                             int newMark;
-                            if (index != -1) {
+                            if (index != string::npos) {
                                 cout << "Новая оценка: ";
                                 cin >> newMark;
                                 strCopy[index + semesterName.length() + 1] = to_string(newMark)[0];
@@ -326,7 +386,7 @@ class DatabaseWorker {
                             else {
                                 cout << "Новая оценка: ";
                                 cin >> newMark;
-                                dataHolder.push_back(strCopy + semesterName + ";" + to_string(newMark));
+                                dataHolder.push_back(strCopy + semesterName + ";" + to_string(newMark) + ";");
                                 flag = false;
                             }
                         }
@@ -338,7 +398,6 @@ class DatabaseWorker {
                             dataHolder.push_back(line);
                             databaseIn.getline(str, 1000, 10);
                             counter++;
-
                         } while (str[0] != '0' && !(databaseIn.eof()));
                         string newLine = to_string(counter) + ';';
                         cout << counter << " семестр -----" << endl;
@@ -353,6 +412,7 @@ class DatabaseWorker {
                             newLine = newLine + adding + ';';
                         }
                         dataHolder.push_back(newLine);
+                        dataHolder.push_back(str);
                         flag = false;
                         continue;
                     }
@@ -360,10 +420,11 @@ class DatabaseWorker {
             }
             databaseIn.close();
             databaseOut.open(databasePath);
-            for (int i = 0; i < dataHolder.length + 1; i++) {
+            for (int i = 0; i <= dataHolder.length; i++) {
                 databaseOut << dataHolder[i]->val << endl;
             }
             databaseOut.close();
+            Crypt();
             if (flag) {
                 cout << "Такой студент не был найден." << endl;
             }
@@ -376,6 +437,7 @@ class DatabaseWorker {
             char studentCard[8];
             cout << "Пожалуйста, введите шифр студента, подлежащий удалению (формат 01Б2345): ";
             cin >> studentCard;
+            Decrypt();
             databaseIn.open(databasePath);
             char str[1000];
             bool flag = true;
@@ -387,6 +449,7 @@ class DatabaseWorker {
                     do {
                         databaseIn.getline(str, 1000, 10);
                     } while (str[0] != '0' && !(databaseIn.eof()));
+                    dataHolder.push_back(str);
                 }
             }
             databaseIn.close();
@@ -395,6 +458,7 @@ class DatabaseWorker {
                 databaseOut << dataHolder[i]->val << endl;
             }
             databaseOut.close();
+            Crypt();
             if (flag) {
                 cout << "Такой студент не был найден." << endl;
             }
@@ -409,6 +473,7 @@ class DatabaseWorker {
             string word;
             char* ptr = NULL;
             char* next_ptr = NULL;
+            Decrypt();
             databaseIn.open(databasePath);
             int counter;
             for (databaseIn.getline(str, 1000, 10); !(databaseIn.eof()); databaseIn.getline(str, 1000, 10)) {
@@ -436,10 +501,12 @@ class DatabaseWorker {
                 }
             }
             databaseIn.close();
+            Crypt();
         }
 
         List filter_students_by_date(bool getData = false) {
             char str[1000];
+            Decrypt();
             databaseIn.open(databasePath);
             string start, end;
             cout << "С какой даты вы бы хотели вывести студентов? (формат ДД.ММ.ГГГГ): ";
@@ -466,6 +533,8 @@ class DatabaseWorker {
                 }
             }
             if (getData) {
+                databaseIn.close();
+                Crypt();
                 return dataHolder;
             }
             else {
@@ -498,6 +567,7 @@ class DatabaseWorker {
                 }
             }
             databaseIn.close();
+            Crypt();
         }
 
         void my_task() {
@@ -510,7 +580,7 @@ class DatabaseWorker {
                 string str = filteredStudents[counter]->val;
                 if (str[0] != '0' && flag) {
                     string pureData = str.substr(2);
-                    if (pureData.find("3") == -1) {
+                    if (pureData.find("3") == string::npos) {
                         semestersDataHolder.push_back(str);
                     }
                     else {
@@ -519,13 +589,13 @@ class DatabaseWorker {
                     }
                 }
                 else if (str[0] == '0') {
-                    if (studentLine != "") {
+                    if (semestersDataHolder.length != 0) {
                         dataHolder.push_back(studentLine);
                         for (int i = 0; i <= semestersDataHolder.length; i++) {
                             dataHolder.push_back(semestersDataHolder[i]->val);
                         }
                         semestersDataHolder = List();
-                        studentLine = "";
+                        studentLine = str;
                     }
                     else {
                         studentLine = str;
@@ -570,6 +640,7 @@ int main()
     SetConsoleOutputCP(1251);
     int choiceNumber;
     DatabaseWorker* dbWorker = new DatabaseWorker();
+    Crypt();
     List options = List({ "Добавить нового студента", "Изменить существующего студента", "Удалить студента", "Показать список студентов", "Вывести студентов определённого года рождения", "Показать выполнение задания" });
     cout << "Добро пожаловать в меню обработки базы данных университета!" << endl;
     do {
